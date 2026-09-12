@@ -1,0 +1,877 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>StudyMate AI</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,600;9..144,700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<script src="config.js"></script>
+<style>
+  :root{
+    --paper:#FAF6EC; --paper-dim:#F2ECDD; --ink:#20291F; --ink-soft:#57604F;
+    --board:#28352A; --board-2:#324030; --chalk:#F3EEDD; --chalk-dim:#C9D2BF;
+    --accent:#D9A441; --line:#E1D8C1; --line-dark:#44523F; --user-bubble:#28352A;
+    --panel-bg:#FFFFFF;
+    --c-math:#5B7C99; --c-physics:#8E6C88; --c-chem:#5E8C61; --c-bio:#B25D4C; --c-eng:#C99A3E; --c-cs:#4A5859;
+  }
+  *{box-sizing:border-box;}
+  html{scroll-behavior:smooth;}
+  body{margin:0;font-family:'Inter',system-ui,sans-serif;background:var(--paper);color:var(--ink);}
+  h1,h2,.headline{font-family:'Fraunces',serif;}
+  button,input,textarea{font-family:inherit;}
+
+  /* ---------- HEADER ---------- */
+  header.board{background:var(--board);color:var(--chalk);border-bottom:2px solid var(--line-dark);}
+  .board-inner{max-width:1180px;margin:0 auto;padding:16px 20px;display:flex;align-items:center;justify-content:space-between;}
+  .brand{display:flex;align-items:center;gap:12px;}
+  .brand-mark{width:42px;height:42px;border-radius:50%;border:2px solid var(--accent);display:flex;align-items:center;justify-content:center;
+    font-family:'Fraunces',serif;font-weight:700;font-size:20px;color:var(--accent);}
+  .brand h1{margin:0;font-size:20px;font-weight:600;}
+  .brand p{margin:2px 0 0;font-size:11.5px;color:var(--chalk-dim);}
+
+  /* ---------- LAYOUT ---------- */
+  main{max-width:1180px;margin:0 auto;padding:24px 20px 60px;}
+  .layout{display:grid;grid-template-columns:1fr;gap:22px;}
+  @media(min-width:980px){.layout{grid-template-columns:280px 1fr;align-items:start;}}
+  .panel{background:var(--panel-bg);border:1px solid var(--line);border-radius:10px;}
+  .panel-title{font-size:13px;font-weight:700;letter-spacing:.3px;color:var(--ink-soft);padding:16px 16px 4px;display:flex;justify-content:space-between;align-items:center;}
+  .panel-title button{background:none;border:none;color:var(--ink-soft);font-size:11.5px;cursor:pointer;}
+
+  .subject-list{padding:6px 12px 14px;display:flex;flex-direction:column;gap:6px;}
+  .subject-btn{display:flex;align-items:center;gap:10px;background:var(--paper-dim);border:none;border-left:4px solid var(--c);
+    padding:10px 12px;border-radius:4px;text-align:left;font-size:13.5px;font-weight:500;color:var(--ink);cursor:pointer;transition:transform .1s;}
+  .subject-btn:hover{transform:translateX(1px);}
+  .subject-dot{width:8px;height:8px;border-radius:50%;background:var(--c);flex-shrink:0;}
+
+  .chats-panel{margin-top:18px;}
+  #chatsList{padding:8px 12px 16px;display:flex;flex-direction:column;gap:5px;max-height:320px;overflow-y:auto;}
+  .chat-item{display:flex;align-items:center;gap:8px;width:100%;border:1px solid var(--line);background:var(--paper-dim);
+    border-radius:6px;padding:9px 10px;cursor:pointer;}
+  .chat-item.active{border-color:var(--accent);}
+  .chat-item .t{flex:1;font-size:12.5px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+  .chat-item .d{font-size:10.5px;color:var(--ink-soft);}
+  .empty-note{font-size:12.5px;color:var(--ink-soft);padding:4px 16px 14px;}
+
+  /* ---------- CHAT ---------- */
+  .chat-panel{display:flex;flex-direction:column;height:76vh;overflow:hidden;}
+  .chat-head{border-bottom:1px solid var(--line);padding:14px 18px;display:flex;align-items:center;gap:10px;}
+  .chat-head .av{width:34px;height:34px;border-radius:50%;background:var(--board);color:var(--accent);
+    display:flex;align-items:center;justify-content:center;font-family:'Fraunces',serif;font-weight:700;}
+  .chat-head h2{margin:0;font-size:14.5px;}
+  .chat-head p{margin:0;font-size:11.5px;color:#6B8F6F;}
+
+  #chatMessages{flex:1;overflow-y:auto;padding:20px;display:flex;flex-direction:column;gap:16px;scrollbar-width:thin;}
+  .msg{display:flex;gap:10px;animation:in .22s ease;}
+  @keyframes in{from{opacity:0;transform:translateY(6px);}to{opacity:1;transform:translateY(0);}}
+  .msg.user{justify-content:flex-end;}
+  .bubble-av{width:30px;height:30px;border-radius:50%;background:var(--board);color:var(--accent);
+    display:flex;align-items:center;justify-content:center;font-family:'Fraunces',serif;font-weight:700;font-size:13px;flex-shrink:0;}
+  .bubble{max-width:82%;padding:12px 15px;border-radius:10px;font-size:14.5px;line-height:1.55;}
+  .bubble.bot{background:var(--paper-dim);border:1px solid var(--line);border-top-left-radius:2px;}
+  .bubble.user{background:var(--user-bubble);color:var(--chalk);border-top-right-radius:2px;}
+  .bubble ul{margin:6px 0;padding-left:20px;}
+  .bubble li{margin:3px 0;}
+  .bubble pre{background:var(--board);color:var(--chalk);padding:12px 14px;border-radius:6px;overflow-x:auto;font-size:13px;margin:8px 0;}
+  .attach-chip{display:inline-flex;align-items:center;gap:5px;font-size:11px;background:rgba(0,0,0,.15);border-radius:12px;padding:3px 9px;margin-bottom:6px;}
+  .speak-btn{margin-top:8px;background:none;border:none;color:var(--ink-soft);font-size:12px;cursor:pointer;padding:0;}
+  .welcome-title{font-weight:600;margin:0 0 4px;font-family:'Fraunces',serif;font-size:16px;}
+
+  .typing-dot{animation:blink 1.2s infinite;}
+  .typing-dot:nth-child(2){animation-delay:.2s;}
+  .typing-dot:nth-child(3){animation-delay:.4s;}
+  @keyframes blink{0%,60%,100%{opacity:.25;}30%{opacity:1;}}
+
+  .input-row{border-top:1px solid var(--line);padding:12px 16px 14px;}
+  #attachPreview{display:none;align-items:center;gap:8px;background:var(--paper-dim);border:1px solid var(--line);
+    border-radius:8px;padding:6px 10px;margin-bottom:8px;font-size:12.5px;}
+  #attachPreview button{margin-left:auto;background:none;border:none;color:#A15C43;cursor:pointer;font-size:13px;}
+  .input-flex{display:flex;gap:8px;align-items:flex-end;}
+  #questionInput{flex:1;border:1px solid var(--line);border-radius:10px;padding:11px 14px;resize:none;outline:none;font-size:14px;background:var(--panel-bg);color:var(--ink);}
+  #questionInput:focus{border-color:var(--accent);}
+  .round-btn{width:42px;height:42px;border-radius:10px;border:1px solid var(--line);background:var(--paper-dim);
+    color:var(--ink);font-size:16px;cursor:pointer;flex-shrink:0;display:flex;align-items:center;justify-content:center;}
+  .round-btn.recording{background:#A15C43;color:#fff;border-color:#A15C43;}
+  #attachBtn{font-size:22px;font-weight:600;border-color:var(--accent);color:var(--accent);}
+  #attachBtn:hover{background:var(--accent);color:#2B2109;}
+  #sendButton{background:var(--board);color:var(--chalk);border:none;padding:0 20px;height:42px;border-radius:10px;font-weight:600;font-size:14px;cursor:pointer;}
+  #sendButton:hover{background:var(--board-2);}
+  #sendButton:disabled{opacity:.6;cursor:default;}
+  .hint{font-size:11.5px;color:var(--ink-soft);margin:8px 2px 0;}
+  .config-warning{background:#F7E7DD;border:1px solid #E3B79A;color:#7A3B1E;border-radius:8px;padding:10px 14px;font-size:12.5px;margin:0 0 16px;}
+
+  /* ---------- PRO / PLAN ---------- */
+  .plan-area{display:flex;align-items:center;gap:10px;}
+  .plan-chip{border:1px solid var(--line-dark);border-radius:20px;padding:6px 14px;font-size:12px;color:var(--chalk-dim);}
+  .plan-chip.pro{background:var(--accent);color:#2B2109;border-color:var(--accent);font-weight:700;}
+  .upgrade-btn{background:var(--accent);color:#2B2109;border:none;border-radius:20px;padding:7px 16px;font-size:12.5px;font-weight:700;cursor:pointer;}
+  .upgrade-btn:hover{filter:brightness(1.06);}
+  .pro-tag{background:var(--accent);color:#2B2109;font-size:9.5px;font-weight:700;letter-spacing:.4px;border-radius:8px;padding:2px 6px;margin-left:auto;}
+  .limit-note{font-size:11.5px;color:#A15C43;margin:6px 2px 0;}
+
+  /* ---------- MODALS ---------- */
+  .modal-overlay{display:none;position:fixed;inset:0;background:rgba(20,24,17,.55);z-index:50;align-items:center;justify-content:center;padding:16px;}
+  .modal-box{background:var(--panel-bg);border-radius:12px;max-width:560px;width:100%;max-height:86vh;overflow-y:auto;padding:22px 24px;position:relative;}
+  .modal-box h3{margin:0 0 4px;font-family:'Fraunces',serif;font-size:19px;}
+  .modal-close{position:absolute;top:14px;right:16px;background:none;border:none;font-size:18px;cursor:pointer;color:var(--ink-soft);}
+  .modal-sub{margin:0 0 16px;font-size:12.5px;color:var(--ink-soft);}
+  .modal-textarea{width:100%;border:1px solid var(--line);border-radius:8px;padding:10px 12px;font-size:13.5px;resize:vertical;min-height:80px;font-family:inherit;}
+  .modal-primary-btn{background:var(--board);color:var(--chalk);border:none;border-radius:8px;padding:10px 18px;font-weight:600;font-size:13.5px;cursor:pointer;margin-top:10px;}
+  .modal-primary-btn:hover{background:var(--board-2);}
+  .modal-primary-btn:disabled{opacity:.6;cursor:default;}
+  .pro-feature-list{margin:10px 0 18px;padding-left:20px;font-size:13px;color:var(--ink);}
+  .pro-feature-list li{margin:5px 0;}
+  .price-line{font-family:'Fraunces',serif;font-size:26px;margin:6px 0 2px;}
+  .demo-note{font-size:11px;color:var(--ink-soft);margin-top:8px;}
+  .flash-card{border:1px solid var(--line);border-radius:8px;padding:12px 14px;margin-bottom:10px;cursor:pointer;background:var(--paper-dim);}
+  .flash-card .side-label{font-size:10px;letter-spacing:.4px;color:var(--ink-soft);font-weight:700;}
+  .flash-card .side-text{margin:4px 0 0;font-size:14px;}
+  .quiz-q{border:1px solid var(--line);border-radius:8px;padding:12px 14px;margin-bottom:12px;}
+  .quiz-q p.qtext{margin:0 0 8px;font-weight:600;font-size:13.5px;}
+  .quiz-opt{display:flex;align-items:center;gap:8px;font-size:13px;padding:5px 0;cursor:pointer;}
+  .quiz-opt.correct{color:#2E7D32;font-weight:600;}
+  .quiz-opt.incorrect{color:#A15C43;font-weight:600;}
+  .quiz-explain{font-size:12px;color:var(--ink-soft);margin-top:8px;display:none;}
+  .score-banner{font-family:'Fraunces',serif;font-size:18px;margin:0 0 14px;}
+  .tool-row{display:flex;gap:8px;flex-wrap:wrap;margin-top:12px;}
+
+</style>
+</head>
+<body>
+
+<header class="board">
+  <div class="board-inner">
+    <div class="brand">
+      <div class="brand-mark">S</div>
+      <div>
+        <h1>StudyMate AI</h1>
+        <p>School help &amp; everyday advice, one question at a time</p>
+      </div>
+    </div>
+    <div class="plan-area">
+      <span class="plan-chip" id="planChip">Free plan</span>
+      <button class="upgrade-btn" onclick="openPaywall('Pro features')">Upgrade</button>
+    </div>
+  </div>
+</header>
+
+<main>
+  <div id="configWarning" class="config-warning" style="display:none;"></div>
+  <div class="layout">
+    <aside>
+      <div class="panel">
+        <div class="panel-title"><span>Study tools</span></div>
+        <div class="subject-list">
+          <button class="subject-btn" style="--c:var(--c-math)" onclick="setPrompt('Help me solve this maths question and show every step: ')"><span class="subject-dot"></span>Mathematics</button>
+          <button class="subject-btn" style="--c:var(--c-physics)" onclick="setPrompt('Explain this physics question simply: ')"><span class="subject-dot"></span>Physics</button>
+          <button class="subject-btn" style="--c:var(--c-chem)" onclick="setPrompt('Explain this chemistry question: ')"><span class="subject-dot"></span>Chemistry</button>
+          <button class="subject-btn" style="--c:var(--c-bio)" onclick="setPrompt('Explain this biology question: ')"><span class="subject-dot"></span>Biology</button>
+          <button class="subject-btn" style="--c:var(--c-eng)" onclick="setPrompt('Help me with this English question: ')"><span class="subject-dot"></span>English</button>
+          <button class="subject-btn" style="--c:var(--c-cs)" onclick="setPrompt('Help me write or understand this code: ')"><span class="subject-dot"></span>Computer science</button>
+          <button class="subject-btn" style="--c:var(--accent)" onclick="setPrompt('I could use some advice about: ')"><span class="subject-dot"></span>Life &amp; advice</button>
+        </div>
+      </div>
+
+      <div class="panel chats-panel" style="margin-top:18px;">
+        <div class="panel-title"><span>Pro tools</span></div>
+        <div class="subject-list">
+          <button class="subject-btn" style="--c:var(--accent)" onclick="openFlashcardModal()">
+            <span class="subject-dot"></span>Flashcards &amp; quiz maker<span class="pro-tag">PRO</span>
+          </button>
+          <button class="subject-btn" style="--c:var(--accent)" onclick="openPracticeTestModal()">
+            <span class="subject-dot"></span>Practice test generator<span class="pro-tag">PRO</span>
+          </button>
+        </div>
+      </div>
+
+      <div class="panel chats-panel">
+        <div class="panel-title"><span>Recent chats</span><button onclick="newChat()">+ New</button></div>
+        <div id="chatsList"></div>
+      </div>
+    </aside>
+
+    <section class="panel chat-panel">
+      <div class="chat-head">
+        <div class="av">S</div>
+        <div>
+          <h2>StudyMate Assistant</h2>
+          <p>● Ready to help you study</p>
+        </div>
+      </div>
+
+      <div id="chatMessages"></div>
+
+      <div class="input-row">
+        <div id="attachPreview">
+          <span id="attachLabel"></span>
+          <button onclick="removeAttachment()">Remove</button>
+        </div>
+        <div class="input-flex">
+          <input type="file" id="fileInput" accept="image/*" style="display:none" onchange="handleFile(event)">
+          <button type="button" class="round-btn" id="attachBtn" title="Take or choose a photo for StudyMate to analyze" aria-label="Add a photo to analyze" onclick="triggerAttach()">+</button>
+          <textarea id="questionInput" rows="1" placeholder="Ask StudyMate anything..."></textarea>
+          <button type="button" class="round-btn" id="micBtn" title="Voice input" onclick="toggleMic()">🎤</button>
+          <button type="button" id="sendButton" onclick="askAI()">Send</button>
+        </div>
+        <p class="hint">StudyMate explains answers step-by-step, can look at a photo you attach, speaks its answers aloud, and remembers your recent chats on this device.</p>
+        <p class="limit-note" id="limitNote" style="display:none;"></p>
+      </div>
+    </section>
+  </div>
+</main>
+
+<!-- ================= PAYWALL MODAL ================= -->
+<div class="modal-overlay" id="paywallModal">
+  <div class="modal-box">
+    <button class="modal-close" onclick="closePaywall()">✕</button>
+    <h3>Upgrade to StudyMate Pro</h3>
+    <p class="modal-sub" id="paywallFeature">Unlock this feature and more.</p>
+    <ul class="pro-feature-list">
+      <li>Unlimited questions every day (no daily cap)</li>
+      <li>AI flashcard &amp; quiz maker, with flashcards you can download</li>
+      <li>Practice test generator with instant grading and explanations</li>
+      <li>Priority access to new study tools</li>
+    </ul>
+    <div class="price-line" id="paywallPrice">$4.99/month</div>
+    <button class="modal-primary-btn" onclick="startCheckout()">Upgrade now</button>
+    <p class="demo-note">
+      Payment isn't wired up on this build yet. Once a real checkout link is added to
+      <code>PAYMENT_CONFIG.checkoutUrl</code> in the code, this button will send you there.
+      Until then, clicking it unlocks a <strong>demo Pro mode</strong> on this device only,
+      so you can test the full experience.
+    </p>
+  </div>
+</div>
+
+<!-- ================= FLASHCARD / QUIZ MODAL ================= -->
+<div class="modal-overlay" id="flashcardModal">
+  <div class="modal-box">
+    <button class="modal-close" onclick="closeModal('flashcardModal')">✕</button>
+    <h3>Flashcards &amp; quiz maker</h3>
+    <p class="modal-sub">Give StudyMate a topic, or paste your notes, and it'll turn them into flashcards you can study and download.</p>
+    <textarea class="modal-textarea" id="flashInput" placeholder="e.g. 'Photosynthesis' or paste your class notes here..."></textarea>
+    <div class="tool-row">
+      <button class="modal-primary-btn" id="flashGenBtn" onclick="generateFlashcards()">Generate flashcards</button>
+      <button class="modal-primary-btn" id="flashDownloadBtn" style="display:none;background:var(--accent);color:#2B2109;" onclick="downloadFlashcards()">Download flashcards (.csv)</button>
+    </div>
+    <div id="flashResults" style="margin-top:16px;"></div>
+  </div>
+</div>
+
+<!-- ================= PRACTICE TEST MODAL ================= -->
+<div class="modal-overlay" id="practiceModal">
+  <div class="modal-box">
+    <button class="modal-close" onclick="closeModal('practiceModal')">✕</button>
+    <h3>Practice test generator</h3>
+    <p class="modal-sub">Give StudyMate a topic and it'll build a short multiple-choice practice test, then grade it instantly with explanations.</p>
+    <textarea class="modal-textarea" id="practiceInput" placeholder="e.g. 'Newton's laws of motion' or 'World War 2 causes'"></textarea>
+    <div class="tool-row">
+      <button class="modal-primary-btn" id="practiceGenBtn" onclick="generatePracticeTest()">Generate test</button>
+      <button class="modal-primary-btn" id="practiceSubmitBtn" style="display:none;" onclick="gradePracticeTest()">Submit for grading</button>
+    </div>
+    <div id="practiceResults" style="margin-top:16px;"></div>
+  </div>
+</div>
+
+<script>
+/* ================= CONFIG (from config.js / mirrors .env) ================= */
+const CONFIG = window.STUDYMATE_CONFIG || {provider:'anthropic', apiKey:''};
+const PROVIDER = (CONFIG.provider || 'anthropic').toLowerCase();
+const API_KEY = CONFIG.apiKey || '';
+const KEY_LOOKS_UNSET = !API_KEY || API_KEY.indexOf('your-') === 0;
+
+let currentSessionId = null;
+let conversationHistory = []; // neutral: {role:'user'|'assistant', text, image?:{mediaType,data}}
+let pendingAttachment = null;
+let messageTexts = {};
+let recognition = null;
+let recognizing = false;
+let sessions = [];
+
+const HAS_ARTIFACT_STORAGE = (typeof window.storage !== 'undefined' && window.storage);
+async function storageGet(key){
+  if(HAS_ARTIFACT_STORAGE){
+    try{ const r = await window.storage.get(key, false); return r ? r.value : null; }catch(e){ return null; }
+  }
+  try{ return localStorage.getItem(key); }catch(e){ return null; }
+}
+async function storageSet(key, value){
+  if(HAS_ARTIFACT_STORAGE){
+    try{ await window.storage.set(key, value, false); return; }catch(e){}
+  }
+  try{ localStorage.setItem(key, value); }catch(e){}
+}
+
+const SYSTEM_PROMPT = `You are StudyMate, a warm, encouraging study assistant and everyday-advice companion for students.
+
+You help with two kinds of questions:
+1) School subjects — Mathematics, Physics, Chemistry, Biology, English, Computer Science/programming, and other school topics. Explain concepts clearly and show step-by-step working for problems. State the final answer plainly.
+2) Real-life questions and practical advice — study habits, time management, motivation, everyday decisions, relationships, school stress. Give grounded, practical, age-appropriate advice. For serious personal or safety concerns, gently encourage talking to a trusted adult, teacher, or counselor in addition to whatever you say.
+
+If the person attaches a photo, analyze it carefully and address what's actually in it (a homework problem, diagram, notes, etc.) before answering.
+
+Formatting: write in plain text. Use short paragraphs. For step-by-step solutions, use lines starting with "- " for steps or lists. Use **bold** sparingly, only for key terms or a final answer. Do not use markdown headers. Match your depth to the question — concise for simple questions, more thorough for complex ones. Be warm and patient, like a good tutor, without being saccharine.`;
+
+/* ================= PRO / PAYWALL ================= */
+// TODO — when you're ready to accept real payments:
+// 1. Set up a Stripe (or other provider) Checkout Session, either via a
+//    ready-made Payment Link (buy.stripe.com/...) or a small backend
+//    endpoint that creates a Checkout Session and returns its URL.
+// 2. Paste that link into checkoutUrl below.
+// 3. On your payment provider's "success" redirect, land the user back on
+//    this page with something like ?pro=1 in the URL, and call
+//    setPro(true) when that param is present (see the bottom of init()).
+// Until checkoutUrl is set, "Upgrade" falls back to a free demo unlock so
+// you can test the full Pro experience end-to-end.
+const PAYMENT_CONFIG = {
+  checkoutUrl: '',      // e.g. 'https://buy.stripe.com/xxxxxxxxxxxx'
+  priceLabel: '$4.99/month'
+};
+
+const FREE_DAILY_LIMIT = 10;
+let isPro = false;
+
+async function loadProStatus(){
+  const v = await storageGet('pro_status');
+  isPro = v === 'true';
+  updateProUI();
+}
+async function setPro(value){
+  isPro = value;
+  await storageSet('pro_status', value ? 'true' : 'false');
+  updateProUI();
+  updateLimitUI();
+}
+function updateProUI(){
+  const chip = document.getElementById('planChip');
+  if(!chip) return;
+  chip.textContent = isPro ? '★ Pro' : 'Free plan';
+  chip.classList.toggle('pro', isPro);
+}
+
+function openPaywall(featureName){
+  document.getElementById('paywallFeature').textContent =
+    (featureName || 'This feature') + ' is a Pro feature.';
+  document.getElementById('paywallPrice').textContent = PAYMENT_CONFIG.priceLabel;
+  document.getElementById('paywallModal').style.display = 'flex';
+}
+function closePaywall(){ document.getElementById('paywallModal').style.display = 'none'; }
+function closeModal(id){ document.getElementById(id).style.display = 'none'; }
+
+function startCheckout(){
+  if(PAYMENT_CONFIG.checkoutUrl){
+    // Real payment path — send the user to your Checkout Session.
+    window.location.href = PAYMENT_CONFIG.checkoutUrl;
+    return;
+  }
+  // No real payment wired up yet — unlock a demo Pro mode instead.
+  activateDemoPro();
+}
+async function activateDemoPro(){
+  await setPro(true);
+  closePaywall();
+  alert("Demo Pro unlocked on this device 🎉\n\n(No real payment was made — this is a placeholder until a real checkout link is added.)");
+}
+
+/* ================= MESSAGE LIMIT (free tier) ================= */
+function todayStr(){ return new Date().toISOString().slice(0,10); }
+async function getMsgUsage(){
+  const raw = await storageGet('msg_usage');
+  let usage = {date: todayStr(), count: 0};
+  try{ if(raw) usage = JSON.parse(raw); }catch(e){}
+  if(usage.date !== todayStr()) usage = {date: todayStr(), count: 0};
+  return usage;
+}
+async function bumpMsgUsage(){
+  const usage = await getMsgUsage();
+  usage.count += 1;
+  await storageSet('msg_usage', JSON.stringify(usage));
+  updateLimitUI(usage);
+  return usage;
+}
+async function updateLimitUI(usage){
+  const el = document.getElementById('limitNote');
+  if(!el) return;
+  if(isPro){ el.style.display = 'none'; return; }
+  if(!usage) usage = await getMsgUsage();
+  const remaining = Math.max(0, FREE_DAILY_LIMIT - usage.count);
+  el.style.display = 'block';
+  el.textContent = remaining > 0
+    ? `Free plan: ${remaining} of ${FREE_DAILY_LIMIT} questions left today.`
+    : `You've used today's ${FREE_DAILY_LIMIT} free questions. Upgrade to Pro for unlimited questions.`;
+}
+
+/* ================= AI HELPER (isolated, non-chat calls) ================= */
+async function callAIRaw(prompt){
+  return callAI([{role:'user', text: prompt}]);
+}
+function extractJSON(text){
+  let t = text.trim();
+  t = t.replace(/^```(json)?/i, '').replace(/```$/,'').trim();
+  const start = t.indexOf('[') === -1 ? t.indexOf('{') : t.indexOf('[');
+  const endChar = t.trimStart().startsWith('{') ? '}' : ']';
+  const end = t.lastIndexOf(endChar);
+  if(start !== -1 && end !== -1) t = t.substring(start, end+1);
+  return JSON.parse(t);
+}
+
+/* ================= FLASHCARDS / QUIZ MAKER (Pro) ================= */
+let lastFlashcards = [];
+function openFlashcardModal(){
+  document.getElementById('flashResults').innerHTML = '';
+  document.getElementById('flashDownloadBtn').style.display = 'none';
+  document.getElementById('flashInput').value = '';
+  document.getElementById('flashcardModal').style.display = 'flex';
+}
+async function generateFlashcards(){
+  if(!isPro){ closeModal('flashcardModal'); openPaywall('The flashcard & quiz maker'); return; }
+  const topic = document.getElementById('flashInput').value.trim();
+  if(!topic){ alert('Enter a topic or paste some notes first.'); return; }
+  const btn = document.getElementById('flashGenBtn');
+  btn.disabled = true; btn.textContent = 'Generating...';
+  document.getElementById('flashResults').innerHTML = '<p style="font-size:13px;color:var(--ink-soft);">Working on it...</p>';
+  try{
+    const prompt = `Create 8 study flashcards for a student based on this topic or these notes:\n"""${topic}"""\n\nReply with ONLY a raw JSON array, no markdown fences, no commentary, in exactly this shape:\n[{"front":"short question or term","back":"concise answer or definition"}]`;
+    const raw = await callAIRaw(prompt);
+    const cards = extractJSON(raw);
+    if(!Array.isArray(cards) || !cards.length) throw new Error('empty');
+    lastFlashcards = cards;
+    renderFlashcards(cards);
+    document.getElementById('flashDownloadBtn').style.display = 'inline-block';
+  }catch(e){
+    document.getElementById('flashResults').innerHTML = '<p style="font-size:13px;color:#A15C43;">Could not generate flashcards. Please try again.</p>';
+    console.error(e);
+  }
+  btn.disabled = false; btn.textContent = 'Generate flashcards';
+}
+function renderFlashcards(cards){
+  const box = document.getElementById('flashResults');
+  box.innerHTML = '';
+  cards.forEach((c, i)=>{
+    const div = document.createElement('div');
+    div.className = 'flash-card';
+    div.innerHTML = `<div class="side-label">CARD ${i+1} · FRONT</div><p class="side-text front">${escapeHTML(c.front||'')}</p>`;
+    let flipped = false;
+    div.onclick = ()=>{
+      flipped = !flipped;
+      div.innerHTML = flipped
+        ? `<div class="side-label">CARD ${i+1} · BACK (tap to flip)</div><p class="side-text">${escapeHTML(c.back||'')}</p>`
+        : `<div class="side-label">CARD ${i+1} · FRONT (tap to flip)</div><p class="side-text">${escapeHTML(c.front||'')}</p>`;
+    };
+    box.appendChild(div);
+  });
+}
+function downloadFlashcards(){
+  if(!lastFlashcards.length) return;
+  let csv = 'Front,Back\n';
+  lastFlashcards.forEach(c=>{
+    const f = '"' + String(c.front||'').replace(/"/g,'""') + '"';
+    const b = '"' + String(c.back||'').replace(/"/g,'""') + '"';
+    csv += f + ',' + b + '\n';
+  });
+  const blob = new Blob([csv], {type:'text/csv'});
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url; a.download = 'studymate-flashcards.csv';
+  document.body.appendChild(a); a.click(); a.remove();
+  URL.revokeObjectURL(url);
+}
+
+/* ================= PRACTICE TEST GENERATOR (Pro) ================= */
+let lastPracticeTest = [];
+function openPracticeTestModal(){
+  document.getElementById('practiceResults').innerHTML = '';
+  document.getElementById('practiceSubmitBtn').style.display = 'none';
+  document.getElementById('practiceInput').value = '';
+  document.getElementById('practiceModal').style.display = 'flex';
+}
+async function generatePracticeTest(){
+  if(!isPro){ closeModal('practiceModal'); openPaywall('The practice test generator'); return; }
+  const topic = document.getElementById('practiceInput').value.trim();
+  if(!topic){ alert('Enter a topic first.'); return; }
+  const btn = document.getElementById('practiceGenBtn');
+  btn.disabled = true; btn.textContent = 'Generating...';
+  document.getElementById('practiceResults').innerHTML = '<p style="font-size:13px;color:var(--ink-soft);">Building your test...</p>';
+  try{
+    const prompt = `Create a 5-question multiple-choice practice test on this topic for a student:\n"""${topic}"""\n\nReply with ONLY a raw JSON array, no markdown fences, no commentary, in exactly this shape:\n[{"question":"...","options":["...","...","...","..."],"correctIndex":0,"explanation":"short explanation of the correct answer"}]`;
+    const raw = await callAIRaw(prompt);
+    const qs = extractJSON(raw);
+    if(!Array.isArray(qs) || !qs.length) throw new Error('empty');
+    lastPracticeTest = qs;
+    renderPracticeTest(qs);
+    document.getElementById('practiceSubmitBtn').style.display = 'inline-block';
+  }catch(e){
+    document.getElementById('practiceResults').innerHTML = '<p style="font-size:13px;color:#A15C43;">Could not generate a test. Please try again.</p>';
+    console.error(e);
+  }
+  btn.disabled = false; btn.textContent = 'Generate test';
+}
+function renderPracticeTest(qs){
+  const box = document.getElementById('practiceResults');
+  box.innerHTML = '';
+  qs.forEach((q, qi)=>{
+    const div = document.createElement('div');
+    div.className = 'quiz-q';
+    let optsHTML = '';
+    (q.options||[]).forEach((opt, oi)=>{
+      optsHTML += `<label class="quiz-opt" data-q="${qi}" data-o="${oi}">
+        <input type="radio" name="pq${qi}" value="${oi}"> ${escapeHTML(opt)}
+      </label>`;
+    });
+    div.innerHTML = `<p class="qtext">${qi+1}. ${escapeHTML(q.question||'')}</p>${optsHTML}<p class="quiz-explain" id="explain${qi}"></p>`;
+    box.appendChild(div);
+  });
+}
+function gradePracticeTest(){
+  let score = 0;
+  lastPracticeTest.forEach((q, qi)=>{
+    const chosen = document.querySelector(`input[name="pq${qi}"]:checked`);
+    const chosenIndex = chosen ? parseInt(chosen.value, 10) : -1;
+    const correct = q.correctIndex;
+    if(chosenIndex === correct) score++;
+    document.querySelectorAll(`.quiz-opt[data-q="${qi}"]`).forEach(label=>{
+      const oi = parseInt(label.dataset.o, 10);
+      label.classList.remove('correct','incorrect');
+      if(oi === correct) label.classList.add('correct');
+      else if(oi === chosenIndex) label.classList.add('incorrect');
+    });
+    const ex = document.getElementById(`explain${qi}`);
+    ex.style.display = 'block';
+    ex.textContent = (chosenIndex === correct ? '✓ Correct. ' : '✗ Not quite. ') + (q.explanation || '');
+  });
+  const box = document.getElementById('practiceResults');
+  const banner = document.createElement('div');
+  banner.className = 'score-banner';
+  banner.textContent = `Score: ${score} / ${lastPracticeTest.length}`;
+  box.prepend(banner);
+  document.getElementById('practiceSubmitBtn').style.display = 'none';
+}
+
+/* ================= INIT ================= */
+async function init(){
+  await loadProStatus();
+  // If a real checkout redirects back here with ?pro=1 on success, unlock Pro.
+  // (Wire this up once PAYMENT_CONFIG.checkoutUrl is set to a real provider.)
+  if(new URLSearchParams(window.location.search).get('pro') === '1'){
+    await setPro(true);
+  }
+  updateLimitUI();
+
+  if(!HAS_ARTIFACT_STORAGE && KEY_LOOKS_UNSET){
+    const box = document.getElementById('configWarning');
+    box.style.display = 'block';
+    box.innerHTML = 'No API key is set yet. Open <code>config.js</code> next to this file, set <code>provider</code> to "anthropic" or "google", and paste in your API key.';
+  }
+
+  await loadSessions();
+  if(sessions.length){
+    selectChat(sessions[0].id);
+  }else{
+    newChat();
+  }
+}
+
+/* ================= SESSIONS / RECENT CHATS ================= */
+async function loadSessions(){
+  const r = await storageGet('chat_sessions');
+  try{ sessions = r ? JSON.parse(r) : []; }catch(e){ sessions = []; }
+  renderChatsList();
+}
+async function saveSessions(){
+  sessions.sort((a,b)=> b.updatedAt - a.updatedAt);
+  if(sessions.length > 25) sessions = sessions.slice(0,25);
+  await storageSet('chat_sessions', JSON.stringify(sessions));
+  renderChatsList();
+}
+function renderChatsList(){
+  const list = document.getElementById('chatsList');
+  list.innerHTML = '';
+  if(sessions.length === 0){
+    list.innerHTML = '<p class="empty-note">No chats yet — ask something to start one.</p>';
+    return;
+  }
+  sessions.forEach(s=>{
+    const item = document.createElement('div');
+    item.className = 'chat-item' + (s.id === currentSessionId ? ' active' : '');
+    item.innerHTML = `<span class="t">${escapeHTML(s.title)}</span><span class="d">${new Date(s.updatedAt).toLocaleDateString()}</span>`;
+    item.onclick = ()=> selectChat(s.id);
+    list.appendChild(item);
+  });
+}
+function newChat(){
+  currentSessionId = Date.now().toString();
+  conversationHistory = [];
+  document.getElementById('chatMessages').innerHTML = `
+    <div class="msg">
+      <div class="bubble-av">S</div>
+      <div class="bubble bot">
+        <p class="welcome-title">New study session started 📚</p>
+        <p style="margin:0;">What would you like to learn, or attach a photo for me to look at?</p>
+      </div>
+    </div>`;
+  renderChatsList();
+}
+function selectChat(id){
+  const s = sessions.find(x=>x.id===id);
+  if(!s) return;
+  currentSessionId = id;
+  conversationHistory = s.messages.map(m=>({role:m.role, text:m.text}));
+  const chat = document.getElementById('chatMessages');
+  chat.innerHTML = '';
+  s.messages.forEach(m=>{
+    if(m.role==='user') addUserMessage(m.text, m.attachmentName, false);
+    else addAIMessage(m.text, false);
+  });
+  renderChatsList();
+}
+function persistCurrentSession(userText, aiText, attachmentName){
+  let s = sessions.find(x=>x.id===currentSessionId);
+  if(!s){
+    s = {id: currentSessionId, title: userText ? createTitle(userText) : 'New chat', messages: [], updatedAt: Date.now()};
+    sessions.unshift(s);
+  }
+  s.messages.push({role:'user', text:userText, attachmentName: attachmentName||null});
+  s.messages.push({role:'assistant', text:aiText});
+  s.updatedAt = Date.now();
+  if(s.title === 'New chat' && userText) s.title = createTitle(userText);
+  saveSessions();
+}
+function createTitle(q){ return q.length <= 40 ? q : q.substring(0,40) + '...'; }
+
+/* ================= ATTACHMENTS (photos from the phone or PC) ================= */
+function triggerAttach(){
+  try{ document.getElementById('fileInput').click(); }
+  catch(e){ alert('Could not open the photo picker on this device.'); console.error(e); }
+}
+function handleFile(event){
+  const file = event.target.files[0];
+  if(!file) return;
+  if(!file.type.startsWith('image/')){ alert('Please choose a photo.'); return; }
+  if(file.size > 8 * 1024 * 1024){ alert('Please choose a photo under 8MB.'); return; }
+  const reader = new FileReader();
+  reader.onload = ()=>{
+    const base64 = reader.result.split(',')[1];
+    pendingAttachment = {mediaType: file.type, data: base64, name: file.name};
+    document.getElementById('attachLabel').textContent = '📷 ' + file.name;
+    document.getElementById('attachPreview').style.display = 'flex';
+  };
+  reader.readAsDataURL(file);
+}
+function removeAttachment(){
+  pendingAttachment = null;
+  document.getElementById('attachPreview').style.display = 'none';
+  document.getElementById('fileInput').value = '';
+}
+
+/* ================= VOICE ================= */
+function toggleMic(){
+  const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+  if(!SR){ alert('This browser does not support voice input. Try Chrome or Safari.'); return; }
+  if(recognizing){ recognition.stop(); return; }
+  recognition = new SR();
+  recognition.lang = 'en-US';
+  recognition.interimResults = false;
+  recognition.onstart = ()=>{ recognizing = true; document.getElementById('micBtn').classList.add('recording'); };
+  recognition.onresult = (e)=>{
+    const input = document.getElementById('questionInput');
+    input.value += (input.value ? ' ' : '') + e.results[0][0].transcript;
+  };
+  recognition.onerror = (e)=>{
+    recognizing = false;
+    document.getElementById('micBtn').classList.remove('recording');
+    if(e.error === 'not-allowed' || e.error === 'service-not-allowed'){
+      alert('Microphone access was blocked. Allow microphone permission for this page and try again.');
+    }else if(e.error !== 'no-speech'){
+      alert('Voice input ran into a problem (' + e.error + ').');
+    }
+  };
+  recognition.onend = ()=>{ recognizing = false; document.getElementById('micBtn').classList.remove('recording'); };
+  try{ recognition.start(); }
+  catch(e){ recognizing = false; document.getElementById('micBtn').classList.remove('recording'); alert('Could not start voice input.'); }
+}
+function speakMessage(id){
+  if(!('speechSynthesis' in window)){ alert('This browser does not support reading answers aloud.'); return; }
+  const text = messageTexts[id] || '';
+  if(!text) return;
+  const clean = text.replace(/\*\*/g,'').replace(/```[\s\S]*?```/g,'code block omitted.');
+  speechSynthesis.cancel();
+  speechSynthesis.speak(new SpeechSynthesisUtterance(clean));
+}
+
+/* ================= PROVIDER CALLS ================= */
+async function callAnthropic(neutralMessages){
+  const headers = {'Content-Type':'application/json'};
+  if(!HAS_ARTIFACT_STORAGE){
+    headers['x-api-key'] = API_KEY;
+    headers['anthropic-version'] = '2023-06-01';
+    headers['anthropic-dangerous-direct-browser-access'] = 'true';
+  }
+  const messages = neutralMessages.map(m=>{
+    if(m.image){
+      return {role:m.role, content:[
+        {type:'image', source:{type:'base64', media_type:m.image.mediaType, data:m.image.data}},
+        {type:'text', text:m.text}
+      ]};
+    }
+    return {role:m.role, content:m.text};
+  });
+  const res = await fetch('https://api.anthropic.com/v1/messages', {
+    method:'POST', headers,
+    body: JSON.stringify({model:'claude-sonnet-4-6', max_tokens:1000, system:SYSTEM_PROMPT, messages})
+  });
+  const data = await res.json();
+  if(!res.ok) throw new Error((data && data.error && data.error.message) || 'Anthropic API error');
+  return (data.content || []).map(b => b.type === 'text' ? b.text : '').filter(Boolean).join('\n') || "I couldn't generate an answer.";
+}
+
+async function callGoogle(neutralMessages){
+  const model = 'gemini-3.6-flash';
+  const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${encodeURIComponent(API_KEY)}`;
+  const contents = neutralMessages.map(m=>{
+    const parts = [];
+    if(m.image) parts.push({inline_data:{mime_type:m.image.mediaType, data:m.image.data}});
+    parts.push({text:m.text});
+    return {role: m.role === 'assistant' ? 'model' : 'user', parts};
+  });
+  const res = await fetch(url, {
+    method:'POST', headers:{'Content-Type':'application/json'},
+    body: JSON.stringify({system_instruction:{parts:[{text:SYSTEM_PROMPT}]}, contents})
+  });
+  const data = await res.json();
+  if(!res.ok) throw new Error((data && data.error && data.error.message) || 'Google API error');
+  const cand = data.candidates && data.candidates[0];
+  const parts = cand && cand.content && cand.content.parts;
+  const text = parts ? parts.map(p=>p.text||'').join('\n') : '';
+  return text || "I couldn't generate an answer.";
+}
+
+async function callAI(neutralMessages){
+  return PROVIDER === 'google' ? callGoogle(neutralMessages) : callAnthropic(neutralMessages);
+}
+
+/* ================= CHAT ================= */
+async function askAI(){
+  const input = document.getElementById('questionInput');
+  const button = document.getElementById('sendButton');
+  const question = input.value.trim();
+  if(!question && !pendingAttachment){ alert('Please type a question or attach a photo.'); return; }
+
+  if(!isPro){
+    const usage = await getMsgUsage();
+    if(usage.count >= FREE_DAILY_LIMIT){
+      openPaywall('Unlimited daily questions');
+      return;
+    }
+  }
+
+  const attachmentName = pendingAttachment ? pendingAttachment.name : null;
+  const displayText = question || 'Please analyze this photo.';
+
+  addUserMessage(displayText, attachmentName, true);
+  input.value = '';
+  button.disabled = true;
+  button.innerText = 'Thinking...';
+  showTyping();
+
+  const neutralMsg = {role:'user', text: displayText};
+  if(pendingAttachment) neutralMsg.image = {mediaType: pendingAttachment.mediaType, data: pendingAttachment.data};
+  conversationHistory.push(neutralMsg);
+  removeAttachment();
+
+  if(!HAS_ARTIFACT_STORAGE && KEY_LOOKS_UNSET){
+    removeTyping();
+    addAIMessage("I don't have an API key yet. Open **config.js** next to this file and paste in your Anthropic or Google API key.", false);
+    conversationHistory.pop();
+    button.disabled = false; button.innerText = 'Send';
+    return;
+  }
+
+  try{
+    const answer = await callAI(conversationHistory);
+    removeTyping();
+    conversationHistory.push({role:'assistant', text: answer});
+    const newId = addAIMessage(answer, true);
+    persistCurrentSession(displayText, answer, attachmentName);
+    speakMessage(newId);
+    if(!isPro) await bumpMsgUsage();
+  }catch(error){
+    removeTyping();
+    let msg = "**Connection problem.** StudyMate couldn't reach the AI service. Please try again in a moment.";
+    if(!HAS_ARTIFACT_STORAGE && /api.?key|authent|unauthorized|permission/i.test(String(error.message))){
+      msg = "**That API key wasn't accepted.** Double-check the `provider` and `apiKey` values in config.js.";
+    }
+    addAIMessage(msg, false);
+    console.error(error);
+  }
+
+  button.disabled = false;
+  button.innerText = 'Send';
+}
+
+/* ================= RENDERING ================= */
+function addUserMessage(message, attachmentName, scroll){
+  const chat = document.getElementById('chatMessages');
+  const div = document.createElement('div');
+  div.className = 'msg user';
+  div.innerHTML = `<div class="bubble user">
+    ${attachmentName ? `<div class="attach-chip">📎 ${escapeHTML(attachmentName)}</div><br>` : ''}
+    ${escapeHTML(message)}
+  </div>`;
+  chat.appendChild(div);
+  if(scroll!==false) scrollChat();
+}
+function addAIMessage(message, scroll){
+  const chat = document.getElementById('chatMessages');
+  const id = 'm' + Date.now() + Math.random().toString(36).slice(2,6);
+  messageTexts[id] = message;
+  const div = document.createElement('div');
+  div.className = 'msg';
+  div.innerHTML = `
+    <div class="bubble-av">S</div>
+    <div class="bubble bot">
+      <div>${formatAIAnswer(message)}</div>
+      <button class="speak-btn" onclick="speakMessage('${id}')">🔊 Listen</button>
+    </div>`;
+  chat.appendChild(div);
+  if(scroll!==false) scrollChat();
+  return id;
+}
+function formatAIAnswer(text){
+  let safe = escapeHTML(text);
+  safe = safe.replace(/```([\s\S]*?)```/g, '<pre><code>$1</code></pre>');
+  safe = safe.replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>');
+  const lines = safe.split('\n');
+  let html = ''; let inList = false;
+  for(const line of lines){
+    const trimmed = line.trim();
+    if(trimmed.startsWith('- ')){
+      if(!inList){ html += '<ul>'; inList = true; }
+      html += `<li>${trimmed.substring(2)}</li>`;
+    }else{
+      if(inList){ html += '</ul>'; inList = false; }
+      if(trimmed.length) html += `<p style="margin:6px 0;">${line}</p>`;
+    }
+  }
+  if(inList) html += '</ul>';
+  return html;
+}
+function showTyping(){
+  const chat = document.getElementById('chatMessages');
+  const div = document.createElement('div');
+  div.id = 'typing'; div.className = 'msg';
+  div.innerHTML = `<div class="bubble-av">S</div><div class="bubble bot">
+    <span class="typing-dot">●</span> <span class="typing-dot">●</span> <span class="typing-dot">●</span></div>`;
+  chat.appendChild(div); scrollChat();
+}
+function removeTyping(){ const t = document.getElementById('typing'); if(t) t.remove(); }
+function setPrompt(text){ const input = document.getElementById('questionInput'); input.value = text; input.focus(); }
+document.getElementById('questionInput').addEventListener('keydown', function(e){
+  if(e.key === 'Enter' && !e.shiftKey){ e.preventDefault(); askAI(); }
+});
+function escapeHTML(text){ const div = document.createElement('div'); div.textContent = text; return div.innerHTML; }
+function scrollChat(){ const chat = document.getElementById('chatMessages'); chat.scrollTop = chat.scrollHeight; }
+
+init();
+</script>
+</body>
+</html>
